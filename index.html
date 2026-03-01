@@ -370,6 +370,65 @@
             transition: all 0.4s var(--spring);
         }
 
+        #desktop-window-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 6px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(150%);
+            -webkit-backdrop-filter: blur(20px) saturate(150%);
+            border: 0.5px solid var(--glass-border);
+            border-radius: 12px;
+            box-shadow: var(--glass-shadow);
+            z-index: 120;
+        }
+
+        #desktop-window-controls.visible {
+            display: flex;
+        }
+
+        .window-control-btn {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s var(--spring);
+            font-size: 14px;
+            line-height: 1;
+        }
+
+        .window-control-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--text-primary);
+        }
+
+        .window-control-btn:active {
+            transform: scale(0.96);
+        }
+
+        .window-control-btn.close-btn:hover {
+            background: rgba(255, 69, 58, 0.85);
+            color: #fff;
+        }
+
+        [data-theme="light"] .window-control-btn {
+            background: rgba(0, 0, 0, 0.06);
+        }
+
+        [data-theme="light"] .window-control-btn:hover {
+            background: rgba(0, 0, 0, 0.12);
+        }
+
         .control-bar-section {
             display: flex;
             align-items: center;
@@ -2973,6 +3032,12 @@
                         <span class="tool-button-icon">🌙</span>
                     </button>
                 </div>
+            </div>
+
+            <div id="desktop-window-controls" aria-label="window-controls">
+                <button id="window-minimize-btn" class="window-control-btn" title="最小化" aria-label="minimize">−</button>
+                <button id="window-maximize-btn" class="window-control-btn" title="最大化" aria-label="maximize">□</button>
+                <button id="window-close-btn" class="window-control-btn close-btn" title="关闭" aria-label="close">✕</button>
             </div>
 
             <div id="mujoco-simulation-bar" style="display:none;">
