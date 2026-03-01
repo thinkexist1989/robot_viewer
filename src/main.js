@@ -264,6 +264,9 @@ class App {
             // Update editor button visibility
             this.updateEditorButtonVisibility();
 
+            // Setup custom desktop window controls for Electron
+            this.setupDesktopWindowControls();
+
             // Start render loop
             this.animate();
 
@@ -958,6 +961,62 @@ class App {
             // Only reset simulation state, don't change run/pause state
             this.mujocoSimulationManager.reset();
         }
+    }
+
+    /**
+     * Setup custom Electron window controls
+     */
+    setupDesktopWindowControls() {
+        const controls = document.getElementById('desktop-window-controls');
+        const minimizeBtn = document.getElementById('window-minimize-btn');
+        const maximizeBtn = document.getElementById('window-maximize-btn');
+        const closeBtn = document.getElementById('window-close-btn');
+
+        if (!controls || !minimizeBtn || !maximizeBtn || !closeBtn) {
+            return;
+        }
+
+        const electronAPI = window.electronAPI;
+        if (!electronAPI || !electronAPI.isDesktopApp) {
+            controls.classList.remove('visible');
+            return;
+        }
+
+        controls.classList.add('visible');
+
+        const setMaximizeButtonState = (isMaximized) => {
+            maximizeBtn.textContent = isMaximized ? '❐' : '□';
+            maximizeBtn.title = isMaximized ? '还原' : '最大化';
+            maximizeBtn.setAttribute('aria-label', isMaximized ? 'restore' : 'maximize');
+        };
+
+        electronAPI.isWindowMaximized().then(setMaximizeButtonState).catch(() => {
+            setMaximizeButtonState(false);
+        });
+
+        const removeMaximizedListener = electronAPI.onWindowMaximizedChanged((isMaximized) => {
+            setMaximizeButtonState(isMaximized);
+        });
+
+        minimizeBtn.addEventListener('click', () => {
+            electronAPI.minimizeWindow();
+        });
+
+        maximizeBtn.addEventListener('click', () => {
+            electronAPI.toggleMaximizeWindow().then((isMaximized) => {
+                setMaximizeButtonState(isMaximized);
+            });
+        });
+
+        closeBtn.addEventListener('click', () => {
+            electronAPI.closeWindow();
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (typeof removeMaximizedListener === 'function') {
+                removeMaximizedListener();
+            }
+        });
     }
 
     /**
