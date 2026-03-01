@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="dark light">
     <title>Robot Viewer</title>
-    <link rel="icon" type="image/svg+xml" href="./favicon.svg">
-    <link rel="alternate icon" href="./favicon.svg">
+    <link rel="icon" type="image/png" href="./icon.png">
+    <link rel="alternate icon" href="./icon.png">
     <!-- Blocking script: Set theme before rendering any content -->
     <script>
         (function() {
@@ -368,6 +368,24 @@
             z-index: 100;
             max-width: calc(100vw - 40px);
             transition: all 0.4s var(--spring);
+        }
+
+        #app-logo-art {
+            position: absolute;
+            top: 41px;
+            left: 20px;
+            color: var(--text-primary);
+            font-family: 'Birthstone', sans-serif;
+            font-size: 16px;
+            font-weight: 500;
+            letter-spacing: -0.2px;
+            line-height: 1;
+            transform: translateY(-50%);
+            z-index: 130;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-app-region: drag;
+            cursor: move;
         }
 
         #desktop-window-controls {
@@ -3039,6 +3057,8 @@
                 <button id="window-maximize-btn" class="window-control-btn" title="最大化" aria-label="maximize">□</button>
                 <button id="window-close-btn" class="window-control-btn close-btn" title="关闭" aria-label="close">✕</button>
             </div>
+
+            <div id="app-logo-art" aria-label="Robot Viewer">Robot Viewer</div>
 
             <div id="mujoco-simulation-bar" style="display:none;">
                 <button id="mujoco-reset-btn-bar">

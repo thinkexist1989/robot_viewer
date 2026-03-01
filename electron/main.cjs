@@ -10,8 +10,9 @@ let productionServer = null;
 
 function resolveWindowIcon() {
   const iconCandidates = [
-    path.join(__dirname, '..', 'build', 'icons', 'icon.png'),
-    path.join(__dirname, '..', 'public', 'favicon.svg')
+    path.join(__dirname, '..', 'public', 'icon.png'),
+    path.join(__dirname, '..', 'dist', 'icon.png'),
+    path.join(__dirname, '..', 'build', 'icons', 'icon.png')
   ];
 
   return iconCandidates.find((iconPath) => fs.existsSync(iconPath));

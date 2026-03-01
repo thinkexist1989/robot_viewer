@@ -73,7 +73,7 @@
     },
     "win": {
       "signAndEditExecutable": false,
-      "icon": "build/icons/icon.ico",
+      "icon": "public/icon.ico",
       "target": [
         "portable"
       ],
