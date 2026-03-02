@@ -10,7 +10,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "build:electron": "vite build && electron-builder",
-    "dist:win": "cross-env ELECTRON_BUILDER_BINARIES_MIRROR=\"https://npmmirror.com/mirrors/electron-builder-binaries/\" vite build && electron-builder --win portable",
+    "dist:win": "cross-env-shell ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/ \"vite build && electron-builder --win portable\"",
     "dist:win:dir": "vite build && electron-builder --win dir",
     "dist:linux": "vite build && electron-builder --linux"
   },
