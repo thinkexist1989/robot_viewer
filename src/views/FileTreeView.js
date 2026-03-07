@@ -3,10 +3,13 @@
  * Responsible for displaying and managing file tree structure
  */
 
+import { canUseAndroidNativeFolderPicker, pickAndroidFolderFiles } from '../utils/AndroidFolderPicker.js';
+
 export class FileTreeView {
     constructor() {
         this.availableModels = [];
         this.onFileClick = null;
+        this.onFilesSelected = null;
     }
 
     /**
@@ -27,12 +30,54 @@ export class FileTreeView {
             return;
         }
 
+        this.renderLoadActions(listContainer);
         this.buildFileTree(listContainer, files, fileMap);
 
         // Restore expanded state
         if (preserveState && expandedPaths.length > 0) {
             setTimeout(() => this.restoreTreeState(expandedPaths), 0);
         }
+    }
+
+    renderLoadActions(container) {
+        const actions = document.createElement('div');
+        actions.className = 'file-tree-actions';
+        actions.style.cssText = `
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            padding: 0 2px;
+        `;
+
+        const loadFilesButton = document.createElement('button');
+        loadFilesButton.className = 'control-button load-files-btn';
+        const loadFilesSpan = document.createElement('span');
+        loadFilesSpan.textContent = window.i18n?.t('loadFiles') || 'Load Files';
+        loadFilesSpan.setAttribute('data-i18n', 'loadFiles');
+        loadFilesButton.appendChild(loadFilesSpan);
+        loadFilesButton.style.cssText = 'padding: 6px 12px; font-size: 12px; flex: 1;';
+        loadFilesButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.triggerFileLoad(false);
+        });
+
+        const loadFolderButton = document.createElement('button');
+        loadFolderButton.className = 'control-button load-folder-btn';
+        const loadFolderSpan = document.createElement('span');
+        loadFolderSpan.textContent = window.i18n?.t('loadFolder') || 'Load Folder';
+        loadFolderSpan.setAttribute('data-i18n', 'loadFolder');
+        loadFolderButton.appendChild(loadFolderSpan);
+        loadFolderButton.style.cssText = 'padding: 6px 12px; font-size: 12px; flex: 1;';
+        loadFolderButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.triggerFileLoad(true);
+        });
+
+        actions.appendChild(loadFilesButton);
+        actions.appendChild(loadFolderButton);
+        container.appendChild(actions);
     }
 
     /**
@@ -127,32 +172,67 @@ export class FileTreeView {
     /**
      * Trigger file/folder loading dialog
      */
-    triggerFileLoad(isFolder = false) {
-        // Create a temporary file input to allow file selection
+    async triggerFileLoad(isFolder = false) {
+        const isAndroid = /Android/i.test(navigator.userAgent || '');
+        const useNativeAndroidFolderPicker = isFolder && canUseAndroidNativeFolderPicker();
+
+        if (useNativeAndroidFolderPicker) {
+            try {
+                const files = await pickAndroidFolderFiles();
+                if (files.length > 0 && this.onFilesSelected) {
+                    await this.onFilesSelected(files, true, false);
+                }
+                return;
+            } catch (error) {
+                console.error('Native Android folder picker failed, fallback to file picker:', error);
+            }
+        }
+
+        const useFolderPicker = isFolder && !isAndroid;
+        const useAppendMode = isAndroid && !useFolderPicker;
+
         const input = document.createElement('input');
         input.type = 'file';
         input.multiple = true;
-        input.webkitdirectory = isFolder;
+        input.setAttribute('multiple', 'multiple');
+
+        if (useFolderPicker) {
+            input.webkitdirectory = true;
+            input.setAttribute('webkitdirectory', '');
+        } else {
+            input.webkitdirectory = false;
+            input.removeAttribute('webkitdirectory');
+        }
         input.style.display = 'none';
 
-        if (!isFolder) {
+        if (!useFolderPicker) {
             input.setAttribute('accept', '.urdf,.xacro,.xml,.dae,.stl,.obj,.collada,.usd,.usda,.usdc,.usdz');
+        }
+
+        if (isFolder && isAndroid) {
+            const message = window.i18n?.getCurrentLanguage?.() === 'zh-CN'
+                ? 'Android 当前不支持文件夹选择，请在下一步中多选 URDF 及其 mesh 文件（STL/DAE/OBJ）；若系统一次只能选一个，可重复点击“加载文件”继续追加。'
+                : 'Folder picker is not supported on Android here. Please multi-select URDF and its mesh files (STL/DAE/OBJ); if only single selection is allowed, tap "Load Files" repeatedly to append more files.';
+            window.alert(message);
         }
 
         input.addEventListener('change', (e) => {
             const files = Array.from(e.target.files);
             if (files && files.length > 0) {
-                // Create a drag event and dispatch it
-                const dt = new DataTransfer();
-                files.forEach(file => dt.items.add(file));
+                if (this.onFilesSelected) {
+                    this.onFilesSelected(files, useFolderPicker, useAppendMode);
+                } else {
+                    const dt = new DataTransfer();
+                    files.forEach(file => dt.items.add(file));
 
-                const dropEvent = new DragEvent('drop', {
-                    bubbles: true,
-                    cancelable: true,
-                    dataTransfer: dt
-                });
+                    const dropEvent = new DragEvent('drop', {
+                        bubbles: true,
+                        cancelable: true,
+                        dataTransfer: dt
+                    });
 
-                document.body.dispatchEvent(dropEvent);
+                    document.body.dispatchEvent(dropEvent);
+                }
             }
             // Clean up
             document.body.removeChild(input);

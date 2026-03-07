@@ -153,6 +153,9 @@ class App {
             this.fileTreeView.onFileClick = (fileInfo) => {
                 this.handleFileClick(fileInfo);
             };
+            this.fileTreeView.onFilesSelected = async (files, _useFolderPicker, useAppendMode = false) => {
+                await this.fileHandler.handleSelectedFiles(files, { append: useAppendMode });
+            };
 
             // Initialize file tree with empty state (shows load button)
             this.fileTreeView.updateFileTree([], new Map());
@@ -747,6 +750,17 @@ class App {
         const meshExts = ['dae', 'stl', 'obj', 'collada'];
 
         if (modelExts.includes(ext)) {
+            // Skip if clicking the currently loaded file
+            if (this.fileHandler.currentModelFile === fileInfo.file) {
+                console.log('File already loaded, skipping reload:', fileInfo.name);
+                // Still load into editor if editor is visible
+                const editorPanel = document.getElementById('code-editor-panel');
+                if (editorPanel && editorPanel.classList.contains('visible') && this.codeEditorManager) {
+                    this.codeEditorManager.loadFile(fileInfo.file);
+                }
+                return;
+            }
+
             // Robot model file, load model and load into editor
             this.fileHandler.loadFile(fileInfo.file);
 

@@ -93,25 +93,52 @@ export class FileHandler {
         } else {
             const files = e.dataTransfer.files;
             if (files.length > 0) {
-                for (const file of files) {
-                    const path = file.webkitRelativePath || file.name;
-                    this.fileMap.set(path, file);
-                    // Only add file.name as a separate key if there's no webkitRelativePath
-                    // This prevents duplicate entries in the file tree
-                    if (!file.webkitRelativePath) {
-                        this.fileMap.set(file.name, file);
-                    }
-                }
-
-                const loadableFiles = await this.findAllLoadableFiles(Array.from(files));
-
-                if (loadableFiles.length > 0) {
-                    this.availableModels = loadableFiles;
-                    this.onFilesLoaded?.(loadableFiles);
-                    await this.loadFileOrMesh(loadableFiles[0]);
-                }
+                await this.handleSelectedFiles(Array.from(files));
             }
         }
+    }
+
+    /**
+     * Handle selected files from file input (mobile/desktop)
+     */
+    async handleSelectedFiles(files, options = {}) {
+        if (!files || files.length === 0) return;
+
+        const { append = false } = options;
+
+        if (!append) {
+            this.fileMap.clear();
+        }
+
+        for (const file of files) {
+            const path = file.webkitRelativePath || file._relativePath || file.name;
+            this.fileMap.set(path, file);
+
+            if (!file.webkitRelativePath) {
+                this.fileMap.set(file.name, file);
+            }
+        }
+
+        const allFiles = Array.from(new Set(this.fileMap.values()));
+        const loadableFiles = await this.findAllLoadableFiles(allFiles);
+        const selectedLoadableFiles = await this.findAllLoadableFiles(files);
+
+        if (loadableFiles.length === 0) {
+            this.availableModels = [];
+            this.onFilesLoaded?.([]);
+            return;
+        }
+
+        this.availableModels = loadableFiles;
+        this.onFilesLoaded?.(loadableFiles);
+
+        const selectedModel = selectedLoadableFiles.find(item => item.category === 'model');
+        const fallbackCurrentModel = this.currentModelFile
+            ? loadableFiles.find(item => item.file === this.currentModelFile || item.path === this.currentModelFile.webkitRelativePath || item.name === this.currentModelFile.name)
+            : null;
+
+        const targetFile = selectedModel || fallbackCurrentModel || loadableFiles[0];
+        await this.loadFileOrMesh(targetFile);
     }
 
     /**
@@ -212,7 +239,7 @@ export class FileHandler {
                             file: file,
                             name: file.name,
                             type: fileType,
-                            path: file.webkitRelativePath || file.name,
+                            path: file.webkitRelativePath || file._relativePath || file.name,
                             category: 'model'
                         };
                     } catch (error) {
@@ -225,7 +252,7 @@ export class FileHandler {
                         file: file,
                         name: file.name,
                         type: fileType,
-                        path: file.webkitRelativePath || file.name,
+                        path: file.webkitRelativePath || file._relativePath || file.name,
                         category: 'model'
                     };
                 }
@@ -234,7 +261,7 @@ export class FileHandler {
                     file: file,
                     name: file.name,
                     type: 'mesh',
-                    path: file.webkitRelativePath || file.name,
+                    path: file.webkitRelativePath || file._relativePath || file.name,
                     category: 'mesh'
                 };
             }
