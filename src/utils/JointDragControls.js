@@ -432,6 +432,12 @@ export class PointerJointDragControls extends JointDragControls {
             mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
         };
 
+        const updateMouseFromTouch = (touch) => {
+            const rect = domElement.getBoundingClientRect();
+            mouse.x = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((touch.clientY - rect.top) / rect.height) * 2 + 1;
+        };
+
         this._mouseDown = e => {
             if (e.button !== 0) return;
             updateMouse(e);
@@ -527,10 +533,111 @@ export class PointerJointDragControls extends JointDragControls {
             }
         };
 
+        this._touchStart = e => {
+            // Only handle single-touch drag
+            if (e.touches.length !== 1) return;
+            
+            // Prevent default to avoid page scroll while dragging
+            e.preventDefault();
+            
+            const touch = e.touches[0];
+            updateMouseFromTouch(touch);
+            raycaster.setFromCamera(mouse, this.camera);
+
+            if (!this.model || !this.model.threeObject) return;
+
+            // Same logic as mouseDown
+            const hiddenMeshes = [];
+            this.model.threeObject.traverse((child) => {
+                if (child.isMesh && !child.visible) {
+                    let isInCollider = false;
+                    let checkNode = child;
+                    while (checkNode) {
+                        if (checkNode.isURDFCollider) {
+                            isInCollider = true;
+                            break;
+                        }
+                        checkNode = checkNode.parent;
+                    }
+                    if (!isInCollider) {
+                        child.visible = true;
+                        hiddenMeshes.push(child);
+                    }
+                }
+            });
+
+            const intersections = raycaster.intersectObject(this.model.threeObject, true);
+
+            hiddenMeshes.forEach(mesh => {
+                mesh.visible = false;
+            });
+
+            const validIntersections = intersections.filter(intersect => {
+                const obj = intersect.object;
+                if (obj.isURDFCollider || obj.userData?.isCollision || obj.userData?.isCollisionGeom) {
+                    return false;
+                }
+                let isInCollider = false;
+                let checkNode = obj;
+                while (checkNode) {
+                    if (checkNode.isURDFCollider) {
+                        isInCollider = true;
+                        break;
+                    }
+                    checkNode = checkNode.parent;
+                }
+                if (isInCollider) {
+                    return false;
+                }
+                return obj.isMesh;
+            });
+
+            const hitLink = validIntersections.length > 0 ? findParentLink(validIntersections[0].object, this.model) : null;
+
+            if (hitLink) {
+                this.moveRay(raycaster.ray);
+                this.setGrabbed(true);
+            }
+        };
+
+        this._touchMove = e => {
+            if (e.touches.length !== 1) return;
+            
+            // Prevent default when manipulating joint
+            if (this.manipulating) {
+                e.preventDefault();
+            }
+            
+            const touch = e.touches[0];
+            updateMouseFromTouch(touch);
+            raycaster.setFromCamera(mouse, this.camera);
+            this.moveRay(raycaster.ray);
+        };
+
+        this._touchEnd = e => {
+            // Release grab regardless of touch count
+            if (this.manipulating) {
+                e.preventDefault();
+            }
+            
+            if (e.changedTouches.length > 0) {
+                const touch = e.changedTouches[0];
+                updateMouseFromTouch(touch);
+                raycaster.setFromCamera(mouse, this.camera);
+                this.moveRay(raycaster.ray);
+            }
+            this.setGrabbed(false);
+        };
+
         domElement.addEventListener('mousedown', this._mouseDown);
         domElement.addEventListener('mousemove', this._mouseMove);
         domElement.addEventListener('mouseup', this._mouseUp);
         domElement.addEventListener('mouseleave', this._mouseLeave);
+        
+        domElement.addEventListener('touchstart', this._touchStart, { passive: false });
+        domElement.addEventListener('touchmove', this._touchMove, { passive: false });
+        domElement.addEventListener('touchend', this._touchEnd, { passive: false });
+        domElement.addEventListener('touchcancel', this._touchEnd, { passive: false });
     }
 
     getRevoluteDelta(joint, startPoint, endPoint) {
@@ -581,6 +688,11 @@ export class PointerJointDragControls extends JointDragControls {
         domElement.removeEventListener('mousemove', this._mouseMove);
         domElement.removeEventListener('mouseup', this._mouseUp);
         domElement.removeEventListener('mouseleave', this._mouseLeave);
+        
+        domElement.removeEventListener('touchstart', this._touchStart);
+        domElement.removeEventListener('touchmove', this._touchMove);
+        domElement.removeEventListener('touchend', this._touchEnd);
+        domElement.removeEventListener('touchcancel', this._touchEnd);
     }
 }
 
