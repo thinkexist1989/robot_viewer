@@ -28,3 +28,9 @@ Thumbs.db
 # Cache
 .cache/
 
+/release
+
+# Android signing
+android/key.properties
+android/**/*.jks
+android/**/*.keystore

@@ -7,7 +7,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "android:add": "npx cap add android",
+    "android:sync": "pnpm run build && npx cap sync android",
+    "android:open": "npx cap open android",
+    "android:apk:debug": "pnpm run android:sync && cd android && gradlew.bat assembleDebug",
+    "android:apk:release": "pnpm run android:sync && cd android && gradlew.bat assembleRelease"
   },
   "keywords": [
     "robot",
@@ -22,6 +27,8 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@babel/runtime": "^7.23.0",
+    "@capacitor/android": "^8.2.0",
+    "@capacitor/core": "^8.2.0",
     "@codemirror/autocomplete": "^6.12.0",
     "@codemirror/commands": "^6.3.3",
     "@codemirror/lang-xml": "^6.0.2",
@@ -39,8 +46,13 @@
     "xacro-parser": "^0.3.11"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.2.0",
+    "concurrently": "9.2.1",
+    "cross-env": "7.0.3",
+    "electron": "35.7.5",
+    "electron-builder": "25.1.8",
     "terser": "^5.26.0",
-    "vite": "^4.5.0"
+    "vite": "^4.5.0",
+    "wait-on": "8.0.5"
   }
 }
-

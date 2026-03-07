@@ -1,8 +1,8 @@
+# Robot Viewer
+
 ![screenshot](./docs/screenshot.png)
 
 ---
-
-# Robot Viewer
 
 [![Version](https://img.shields.io/badge/version-v1.2.0-blue.svg)](https://github.com/fan-ziqi/robot_viewer)
 [![License](https://img.shields.io/badge/license-Apache--2.0-yellow.svg)](LICENSE)
@@ -58,6 +58,64 @@ pnpm run build
 ```
 
 Output will be in the `dist/` directory.
+
+## Build Android APK
+
+This project can be packaged as an Android app with [Capacitor](https://capacitorjs.com/).
+
+1. Install dependencies (already includes Capacitor packages in `package.json`):
+
+```bash
+pnpm install
+```
+
+1. Add Android platform (only needed once):
+
+```bash
+pnpm run android:add
+```
+
+1. Build web assets and sync to native project:
+
+```bash
+pnpm run android:sync
+```
+
+1. Build debug APK:
+
+```bash
+pnpm run android:apk:debug
+```
+
+Debug APK output path:
+
+`android/app/build/outputs/apk/debug/app-debug.apk`
+
+Optional: Open Android Studio project:
+
+```bash
+pnpm run android:open
+```
+
+### Signed release APK
+
+1. Generate a keystore (JDK `keytool`):
+
+```bash
+keytool -genkeypair -v -keystore android/app/upload-keystore.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000
+```
+
+1. Create `android/key.properties` from `android/key.properties.example` and fill real values.
+
+1. Build signed release APK:
+
+```bash
+pnpm run android:apk:release
+```
+
+Release APK output path:
+
+`android/app/build/outputs/apk/release/app-release.apk`
 
 ## Contributing
 
